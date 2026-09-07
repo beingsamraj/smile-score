@@ -4,8 +4,9 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Activity, Bell, UserCircle, LogOut, Menu, X } from 'lucide-react';
+import { Bell, UserCircle, LogOut, Menu, X } from 'lucide-react';
 import { getSession, logout } from '@/../lib/auth';
+import Image from 'next/image';
 
 interface User {
   username?: string;
@@ -79,7 +80,7 @@ export default function Navbar() {
           {/* Left Side: Logo & Desktop Navigation */}
           <div className="flex items-center">
             <Link href="/dashboard" className="flex items-center space-x-3 flex-shrink-0" aria-label="Smile Score Home">
-              <Activity className="w-6 h-6 text-blue-500" />
+              <Image src="/logo.png" alt="Smile Score Logo" width={36} height={36} className="rounded-lg" />
               <span className="text-xl font-bold">Smile Score</span>
             </Link>
             

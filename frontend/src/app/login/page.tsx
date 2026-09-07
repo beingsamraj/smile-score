@@ -3,7 +3,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Eye, EyeOff, Loader2, Activity } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import Image from 'next/image';
 import { login, getSession } from '@/../lib/auth';
 
 export default function LoginPage() {
@@ -76,8 +77,8 @@ export default function LoginPage() {
       <div className="w-full max-w-md bg-white rounded-xl shadow-lg border border-gray-100 p-8">
         
         <div className="flex flex-col items-center mb-8">
-          <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mb-4 shadow-sm">
-            <Activity className="w-7 h-7 text-white" />
+          <div className="mb-4">
+            <Image src="/logo.png" alt="Smile Score Logo" width={64} height={64} className="rounded-xl shadow-sm" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Welcome Back</h1>
           <p className="text-gray-500 text-sm mt-2 text-center">
