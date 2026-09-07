@@ -109,3 +109,23 @@ ALTER TABLE public.devices ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TI
 
 -- NOTE: existing columns device_id, factory_id, device_name, location, status, last_seen, created_at
 -- are retained for compatibility.
+
+-- --------------------------------------------------------
+-- EMOTIONS TABLE (Added for Reports Module)
+-- --------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.emotions (
+    emotion_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    worker_id VARCHAR(20) REFERENCES public.workers(worker_id) ON DELETE CASCADE,
+    factory_id VARCHAR(20) REFERENCES public.factories(factory_id) ON DELETE CASCADE,
+    department_id VARCHAR(20) REFERENCES public.departments(department_id) ON DELETE CASCADE,
+    device_id VARCHAR(20) REFERENCES public.devices(device_id) ON DELETE SET NULL,
+    emotion VARCHAR(20) NOT NULL, -- \'happy\', \'ok\', \'sad\'
+    source VARCHAR(20) NOT NULL, -- \'rfid\', \'camera\', \'manual\'
+    smile_score NUMERIC(5, 2), -- e.g., 85.5
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_emotions_worker ON public.emotions(worker_id);
+CREATE INDEX IF NOT EXISTS idx_emotions_factory ON public.emotions(factory_id);
+CREATE INDEX IF NOT EXISTS idx_emotions_department ON public.emotions(department_id);
+CREATE INDEX IF NOT EXISTS idx_emotions_created_at ON public.emotions(created_at);
