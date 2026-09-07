@@ -12,11 +12,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from app.routers import dashboard, factories, users, devices
+from app.routers import dashboard, factories, users, devices, workers, departments
 app.include_router(dashboard.router)
 app.include_router(factories.router)
 app.include_router(users.router)
 app.include_router(devices.router)
+app.include_router(workers.router)
+app.include_router(departments.dept_router)
 
 @app.get("/api/health")
 def health_check():
@@ -65,6 +67,11 @@ def login(req: LoginRequest):
         # Check if active
         if user.get("status") is False:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Account is disabled")
+
+        # Check role access
+        role = user.get("user_role", "").lower()
+        if role not in ["admin", "superadmin", "super_admin"]:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="ACCESS_DENIED")
             
         return {
             "status": "success",

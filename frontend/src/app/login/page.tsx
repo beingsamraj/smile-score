@@ -45,6 +45,8 @@ export default function LoginPage() {
         // Provide user-friendly messages rather than technical Supabase errors where possible
         if ((loginError as any).message?.includes('Invalid login credentials')) {
           setError('Invalid email or password.');
+        } else if ((loginError as any).message?.includes('ACCESS_DENIED')) {
+          setError('ACCESS_DENIED');
         } else {
           setError((loginError as any).message || 'An error occurred during login.');
         }
@@ -83,7 +85,12 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {error && (
+        {error === 'ACCESS_DENIED' ? (
+          <div className="mb-6 p-4 bg-red-100 border-l-4 border-red-600 text-red-800 rounded shadow-sm text-center">
+            <h3 className="text-lg font-bold mb-1">Access Denied</h3>
+            <p className="text-sm">You do not have administrative privileges to access this portal.</p>
+          </div>
+        ) : error && (
           <div className="mb-6 p-3 bg-red-50 border border-red-200 text-red-600 rounded-md text-sm font-medium">
             {error}
           </div>
