@@ -12,6 +12,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from app.routers import dashboard, factories, users, devices
+app.include_router(dashboard.router)
+app.include_router(factories.router)
+app.include_router(users.router)
+app.include_router(devices.router)
+
 @app.get("/api/health")
 def health_check():
     return {
@@ -33,3 +39,43 @@ def test_supabase():
             "status": "error",
             "message": "Configured but table unavailable or connection failed"
         }
+
+from pydantic import BaseModel
+from fastapi import HTTPException, status
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+@app.post("/api/auth/login")
+def login(req: LoginRequest):
+    try:
+        # Query the custom users table for the provided username
+        response = supabase.table("users").select("*").eq("username", req.username).execute()
+        
+        if not response.data or len(response.data) == 0:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid username or password")
+            
+        user = response.data[0]
+        
+        # Check user_pin
+        if user.get("user_pin") != req.password:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid username or password")
+            
+        # Check if active
+        if user.get("status") is False:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Account is disabled")
+            
+        return {
+            "status": "success",
+            "user": {
+                "user_id": user.get("user_id"),
+                "username": user.get("username"),
+                "user_role": user.get("user_role"),
+                "factory_id": user.get("factory_id")
+            }
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
