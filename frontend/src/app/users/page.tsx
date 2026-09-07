@@ -8,7 +8,8 @@ import { Factory, getFactories } from '@/lib/factoryApi';
 import { UserTable } from '@/components/users/UserTable';
 import { UserForm } from '@/components/users/UserForm';
 import { DeleteUserDialog } from '@/components/users/DeleteUserDialog';
-import { Plus, Search, Filter, Loader2, AlertCircle } from 'lucide-react';
+import { UserCsvImport } from '@/components/users/UserCsvImport';
+import { Plus, Search, Filter, Loader2, AlertCircle, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { getSession } from '@/../lib/auth';
 
@@ -27,6 +28,7 @@ export default function UsersPage() {
   
   // Modals
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
@@ -113,13 +115,22 @@ export default function UsersPage() {
             <h1 className="text-2xl font-bold text-gray-900">Users</h1>
             <p className="text-gray-500 mt-1">Manage workers and application users</p>
           </div>
-          <button
-            onClick={handleAddClick}
-            className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            Add User
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setIsImportOpen(true)}
+              className="inline-flex items-center justify-center px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+            >
+              <Upload className="w-5 h-5 mr-2" />
+              Import CSV
+            </button>
+            <button
+              onClick={handleAddClick}
+              className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              Add User
+            </button>
+          </div>
         </div>
 
         <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6 flex flex-col md:flex-row gap-4">
@@ -205,6 +216,12 @@ export default function UsersPage() {
         isOpen={isFormOpen}
         onClose={() => setIsFormOpen(false)}
         onSubmit={handleFormSubmit}
+      />
+
+      <UserCsvImport
+        isOpen={isImportOpen}
+        onClose={() => setIsImportOpen(false)}
+        onSuccess={loadData}
       />
 
       <DeleteUserDialog

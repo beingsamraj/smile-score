@@ -77,3 +77,61 @@ export async function deleteUser(id: string) {
   });
   return handleResponse(res);
 }
+
+
+export interface CsvRowError {
+  row: number;
+  errors: string[];
+}
+
+export interface CsvValidationPreview {
+  valid: boolean;
+  total_rows: number;
+  valid_rows: number;
+  invalid_rows: number;
+  errors: CsvRowError[];
+}
+
+export interface CsvImportResponse {
+  success: boolean;
+  imported_count: number;
+  message: string;
+}
+
+export async function validateUsersCsv(file: File): Promise<CsvValidationPreview> {
+  const formData = new FormData();
+  formData.append('file', file);
+  
+  const res = await fetch(`${API_URL}/api/users/import/validate`, {
+    method: 'POST',
+    body: formData,
+  });
+  return handleResponse(res);
+}
+
+export async function importUsersCsv(file: File): Promise<CsvImportResponse> {
+  const formData = new FormData();
+  formData.append('file', file);
+  
+  const res = await fetch(`${API_URL}/api/users/import`, {
+    method: 'POST',
+    body: formData,
+  });
+  return handleResponse(res);
+}
+
+export function downloadUsersCsvTemplate() {
+  const headers = ['full_name', 'email', 'phone', 'role', 'factory_code', 'rfid_uid', 'status'];
+  const csvContent = headers.join(',') + '\n';
+  
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', 'workers_import_template.csv');
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
