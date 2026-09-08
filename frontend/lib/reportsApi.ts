@@ -61,3 +61,7 @@ export async function getIndividualWorkerReport(workerId: string, filters: any =
 export async function getRiskAnalysis(filters: any = {}) {
   return fetchApi('/risk-analysis', filters);
 }
+
+export async function getReportLogs(filters: any = {}) {
+  return fetchApi('/logs', filters);
+}
