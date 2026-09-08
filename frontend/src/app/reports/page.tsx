@@ -8,6 +8,7 @@ import {
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Calendar, Filter, Download, Activity, AlertTriangle, Users, Smile, Meh, Frown, Factory, Building, Search } from 'lucide-react';
 import Image from 'next/image';
+import Navbar from '@/components/Navbar';
 
 const EMOTION_COLORS = {
   happy: '#10B981', // green
@@ -100,31 +101,39 @@ export default function ReportsPage() {
 
   if (loading && !summary) {
     return (
-      <div className="p-8 space-y-6 max-w-7xl mx-auto animate-pulse">
-        <div className="h-10 w-64 bg-gray-200 rounded"></div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[...Array(4)].map((_, i) => <div key={i} className="h-32 bg-gray-200 rounded-xl"></div>)}
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="p-8 space-y-6 max-w-7xl mx-auto animate-pulse">
+          <div className="h-10 w-64 bg-gray-200 rounded"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[...Array(4)].map((_, i) => <div key={i} className="h-32 bg-gray-200 rounded-xl"></div>)}
+          </div>
+          <div className="h-96 bg-gray-200 rounded-xl"></div>
         </div>
-        <div className="h-96 bg-gray-200 rounded-xl"></div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="p-8 max-w-7xl mx-auto flex flex-col items-center justify-center min-h-[60vh] text-center">
-        <AlertTriangle className="h-16 w-16 text-red-500 mb-4" />
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Unable to load reports</h2>
-        <p className="text-gray-600 mb-6">{error}</p>
-        <button onClick={fetchReports} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-          Retry
-        </button>
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="p-8 max-w-7xl mx-auto flex flex-col items-center justify-center min-h-[60vh] text-center">
+          <AlertTriangle className="h-16 w-16 text-red-500 mb-4" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Unable to load reports</h2>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <button onClick={fetchReports} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            Retry
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 md:p-8 max-w-screen-2xl mx-auto space-y-8 pb-20">
+    <div className="min-h-screen bg-gray-50">
+      <Navbar />
+      <div className="p-6 md:p-8 max-w-screen-2xl mx-auto space-y-8 pb-20">
       
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -391,6 +400,7 @@ export default function ReportsPage() {
           </div>
         </>
       )}
+      </div>
     </div>
   );
 }
