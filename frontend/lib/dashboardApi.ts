@@ -21,6 +21,10 @@ export async function getSmileTrend(period = 'today') {
   return fetchApi(`/smile-trend?period=${period}`);
 }
 
+export async function getSmileForecast(hours = 4) {
+  return fetchApi(`/smile-forecast?hours=${hours}`);
+}
+
 export async function getEmotionDistribution() {
   return fetchApi('/emotion-distribution');
 }
