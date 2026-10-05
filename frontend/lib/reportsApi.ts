@@ -1,5 +1,6 @@
-import { API_URL } from './api';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { getSession } from './auth';
+import { API_URL } from './api';
 
 async function fetchApi(endpoint: string, queryParams: Record<string, string | undefined> = {}) {
   const sessionData = await getSession();

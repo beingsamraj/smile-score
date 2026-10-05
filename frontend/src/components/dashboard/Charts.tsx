@@ -2,20 +2,62 @@
 'use client';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
-export function SmileTrendChart({ data }: { data: any }) {
+export function SmileTrendChart({ data, forecast }: { data: any, forecast?: any }) {
   if (!data || !data.data) return <div className="p-4 bg-white rounded-xl border h-64 flex items-center justify-center">Loading...</div>;
   if (data.data.length === 0) return <div className="p-4 bg-white rounded-xl border h-64 flex items-center justify-center text-gray-500">No smile-score data available for this period.</div>;
 
+  // Combine historical and forecast data
+  let combinedData = [...data.data];
+  if (forecast && forecast.data && forecast.data.length > 0) {
+    // Add forecast points with a flag
+    const forecastPoints = forecast.data.map((p: any) => ({
+      timestamp: p.timestamp,
+      forecast_score: p.smile_score,
+      isForecast: true
+    }));
+    
+    // To make the line continuous, add the last historical point as the start of forecast
+    if (combinedData.length > 0) {
+      const lastHist = combinedData[combinedData.length - 1];
+      forecastPoints.unshift({
+        timestamp: lastHist.timestamp,
+        forecast_score: lastHist.smile_score,
+        isForecast: true
+      });
+    }
+    
+    combinedData = [...combinedData, ...forecastPoints];
+  }
+
   return (
     <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 h-80">
-      <h3 className="text-lg font-semibold text-gray-800 mb-4">Smile Score Trend ({data.period})</h3>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-semibold text-gray-800">Smile Score Trend & Forecast</h3>
+        {forecast && forecast.data && forecast.data.length > 0 && (
+          <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full flex items-center">
+            <span className="w-1.5 h-1.5 bg-purple-500 rounded-full mr-1.5 animate-pulse" />
+            AI Forecast Active
+          </span>
+        )}
+      </div>
       <ResponsiveContainer width="100%" height="80%">
-        <LineChart data={data.data}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="timestamp" tickFormatter={(tick) => new Date(tick as string | number).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} />
-          <YAxis domain={[0, 100]} />
-          <Tooltip labelFormatter={(label) => new Date(label as string | number).toLocaleString()} />
-          <Line type="monotone" dataKey="smile_score" stroke="#2563eb" strokeWidth={2} />
+        <LineChart data={combinedData}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+          <XAxis 
+            dataKey="timestamp" 
+            tickFormatter={(tick) => {
+              const d = new Date(tick as string | number);
+              return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+            }}
+            tick={{ fontSize: 11 }}
+          />
+          <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} />
+          <Tooltip 
+            labelFormatter={(label) => new Date(label as string | number).toLocaleString()} 
+            formatter={(value: any, name: any) => [value, name === 'smile_score' ? 'Historical Score' : 'Predicted Score']}
+          />
+          <Line type="monotone" dataKey="smile_score" stroke="#2563eb" strokeWidth={2} dot={{ r: 3 }} connectNulls />
+          <Line type="monotone" dataKey="forecast_score" stroke="#a855f7" strokeWidth={2} strokeDasharray="5 5" dot={{ r: 0 }} connectNulls />
         </LineChart>
       </ResponsiveContainer>
     </div>

@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react-hooks/set-state-in-effect */
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable react/no-unescaped-entities */
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -12,6 +16,7 @@ export default function ReportsPage() {
   
   const [factories, setFactories] = useState<any[]>([]);
   const [selectedFactory, setSelectedFactory] = useState<string>('');
+  const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
   const [logs, setLogs] = useState<any[]>([]);
 
   useEffect(() => {
@@ -31,10 +36,10 @@ export default function ReportsPage() {
     setLoading(true);
     setError(null);
     try {
-      // Always use today for the "report of the day"
-      const start = new Date();
+      const start = new Date(selectedDate);
       start.setHours(0,0,0,0);
-      const end = new Date();
+      const end = new Date(selectedDate);
+      end.setHours(23,59,59,999);
       
       const filters = { 
         start_date: start.toISOString(), 
@@ -43,7 +48,7 @@ export default function ReportsPage() {
       };
       
       const res = await getReportLogs(filters);
-      setLogs(res.logs || []);
+      setLogs(res.logs || res.data || []);
     } catch (err: any) {
       setError(err.message || 'Failed to load report data');
     } finally {
@@ -53,7 +58,7 @@ export default function ReportsPage() {
 
   useEffect(() => {
     fetchReports();
-  }, [selectedFactory]);
+  }, [selectedFactory, selectedDate]);
 
   const downloadPdf = () => {
     // In a real app, this would use jsPDF or html2pdf to generate a PDF,
@@ -90,10 +95,16 @@ export default function ReportsPage() {
               <FileText className="h-6 w-6 text-blue-600" />
               Daily Mood Report
             </h1>
-            <p className="text-gray-500 mt-1 text-sm">View today's worker mood logs by factory.</p>
+            <p className="text-gray-500 mt-1 text-sm">View worker mood logs by factory and date.</p>
           </div>
           
           <div className="flex flex-wrap items-center gap-3">
+            <input 
+              type="date"
+              className="px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+            />
             <select 
               className="px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[200px]"
               value={selectedFactory}
@@ -128,7 +139,9 @@ export default function ReportsPage() {
                     <th className="px-6 py-4">Worker Name</th>
                     <th className="px-6 py-4">Mood</th>
                     <th className="px-6 py-4">Department</th>
-                    <th className="px-6 py-4">Factory</th>
+                    <th className="px-6 py-4">Temp (°C)</th>
+                    <th className="px-6 py-4">HR (bpm)</th>
+                    <th className="px-6 py-4">SpO2 (%)</th>
                     <th className="px-6 py-4">Time</th>
                   </tr>
                 </thead>
@@ -139,17 +152,19 @@ export default function ReportsPage() {
                       <td className="px-6 py-4">{log.worker_name}</td>
                       <td className="px-6 py-4">
                         <span className={`px-2.5 py-1 rounded-full text-xs font-medium uppercase tracking-wide ${
-                          log.mood === 'happy' ? 'bg-green-100 text-green-700' :
-                          log.mood === 'sad' ? 'bg-red-100 text-red-700' :
-                          'bg-orange-100 text-orange-700'
+                          log.mood === 'HAPPY' ? 'bg-green-100 text-green-700' :
+                          log.mood === 'SAD' ? 'bg-red-100 text-red-700' :
+                          'bg-yellow-100 text-yellow-700'
                         }`}>
-                          {log.mood}
+                          {log.mood || 'N/A'}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-gray-600">{log.department}</td>
-                      <td className="px-6 py-4 text-gray-600">{log.factory}</td>
+                      <td className="px-6 py-4 text-gray-600">{log.temp?.toFixed(1) || '-'}</td>
+                      <td className="px-6 py-4 text-gray-600">{log.hr?.toFixed(0) || '-'}</td>
+                      <td className="px-6 py-4 text-gray-600">{log.spo2?.toFixed(1) || '-'}</td>
                       <td className="px-6 py-4 text-gray-500 text-xs">
-                        {new Date(log.recorded_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                        {log.recorded_at ? new Date(log.recorded_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'}
                       </td>
                     </tr>
                   ))}

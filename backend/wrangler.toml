@@ -1,0 +1,11 @@
+name = "smile-score-backend"
+main = "src/index.js"
+compatibility_date = "2024-10-01"
+
+# We are using FastAPI, so Wrangler is only used here to manage the D1 database migrations locally/remotely.
+# The database ID should match the existing one.
+[[d1_databases]]
+binding = "DB"
+database_name = "smile_score"
+database_id = "79708370-b3ec-4c4b-9333-237d49cde994"
+migrations_dir = "migrations"
