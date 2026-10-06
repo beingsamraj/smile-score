@@ -1,20 +1,29 @@
-import nest_asyncio
-wait_dummy = nest_asyncio.apply()
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from app.database import supabase
 import asyncio
 import json
+import logging
 from datetime import datetime, timedelta, timezone
 
+limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(title="Smile Score API")
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept"],
 )
 
 from app.routers import dashboard, factories, users, devices, workers, departments, reports
@@ -32,21 +41,40 @@ app.include_router(d1_router)
 class ConnectionManager:
     def __init__(self):
         self.active_connections: list[WebSocket] = []
+        self._ping_tasks: dict = {}
 
     async def connect(self, websocket: WebSocket):
         await websocket.accept()
         self.active_connections.append(websocket)
+        # Start heartbeat ping task
+        task = asyncio.create_task(self.heartbeat(websocket))
+        self._ping_tasks[websocket] = task
+
+    async def heartbeat(self, websocket: WebSocket):
+        try:
+            while True:
+                await asyncio.sleep(20)
+                await websocket.send_json({"type": "ping", "timestamp": datetime.now(timezone.utc).isoformat()})
+        except asyncio.CancelledError:
+            pass
+        except Exception as e:
+            logging.error(f"WebSocket heartbeat error: {e}")
+            self.disconnect(websocket)
 
     def disconnect(self, websocket: WebSocket):
         if websocket in self.active_connections:
             self.active_connections.remove(websocket)
+        if websocket in self._ping_tasks:
+            self._ping_tasks[websocket].cancel()
+            del self._ping_tasks[websocket]
 
     async def broadcast(self, message: dict):
         dead = []
         for ws in self.active_connections:
             try:
                 await ws.send_json(message)
-            except Exception:
+            except Exception as e:
+                logging.error(f"Broadcast failed: {e}")
                 dead.append(ws)
         for ws in dead:
             self.disconnect(ws)
@@ -58,9 +86,11 @@ async def websocket_dashboard(websocket: WebSocket):
     await manager.connect(websocket)
     try:
         while True:
-            # Keep alive — wait for ping or any message from client
-            await asyncio.wait_for(websocket.receive_text(), timeout=30)
-    except (WebSocketDisconnect, asyncio.TimeoutError, Exception):
+            msg = await websocket.receive_text()
+            if msg == "pong":
+                pass
+    except (WebSocketDisconnect, asyncio.TimeoutError, Exception) as e:
+        logging.error(f"WebSocket closed: {e}")
         manager.disconnect(websocket)
 
 # Utility to broadcast emotion updates (call this from any POST emotion endpoint)
@@ -141,24 +171,23 @@ def get_worker_timeline(worker_id: str, days: int = 7):
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import logging
+from app.ai_models.anomaly_detector import anomaly_detector
 
 scheduler = AsyncIOScheduler()
 
 @app.on_event("startup")
 async def startup_event():
     # Initialize background jobs
-    scheduler.add_job(run_anomaly_detection, 'interval', minutes=15)
+    scheduler.add_job(run_anomaly_detection, 'interval', minutes=15, coalesce=True, max_instances=1)
     scheduler.start()
     logging.info("APScheduler started: running anomaly detection every 15 minutes.")
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    scheduler.shutdown()
+    scheduler.shutdown()\n    from app.services.d1_client import d1\n    await d1.close()
 
 async def run_anomaly_detection():
     try:
-        from app.ai_models.anomaly_detector import anomaly_detector
-        
         # Get emotions from the last 15 minutes
         since = (datetime.now(timezone.utc) - timedelta(minutes=15)).isoformat()
         res = supabase.table("emotions").select("emotion_id, worker_id, smile_score, created_at").gte("created_at", since).execute()
@@ -210,7 +239,7 @@ class ActiveWorkerTestRequest(BaseModel):
 
 @app.get("/api/active-worker")
 async def get_active_worker():
-    state = active_worker_service.get_active_worker()
+    state = await active_worker_service.get_active_worker()
     if state:
         return state
     return {"active": False, "worker_id": None}
@@ -218,7 +247,7 @@ async def get_active_worker():
 @app.post("/api/test/active-worker")
 async def test_set_active_worker(req: ActiveWorkerTestRequest):
     # This is ONLY for testing the ESP32 bridge
-    active_worker_service.set_active_worker(req.essl_user_id, req.worker_id)
+    await active_worker_service.set_active_worker(req.essl_user_id, req.worker_id)
     return {"status": "success", "message": f"Test active worker set to {req.worker_id}"}
 
 from app.services.d1_client import d1
@@ -284,9 +313,9 @@ async def submit_feedback(request: FeedbackRequest):
         await broadcast_emotion_update(inserted_record)
         
         # CLEAR the active worker after successful feedback (legacy workflow cleanup)
-        current_state = active_worker_service.get_active_worker()
+        current_state = await active_worker_service.get_active_worker()
         if current_state and current_state["worker_id"] == worker_data["worker_id"]:
-            active_worker_service.clear_active_worker()
+            await active_worker_service.clear_active_worker()
             
         return {
             "success": True,
@@ -304,6 +333,7 @@ async def submit_feedback(request: FeedbackRequest):
     except HTTPException:
         raise
     except Exception as e:
+        logging.exception("Unhandled exception:")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/health")
@@ -336,7 +366,8 @@ class LoginRequest(BaseModel):
     password: str
 
 @app.post("/api/auth/login")
-def login(req: LoginRequest):
+@limiter.limit("10/minute")
+def login(req: LoginRequest, request: Request):
     try:
         # Query the custom users table for the provided username
         response = supabase.table("users").select("*").eq("username", req.username).execute()
@@ -392,4 +423,5 @@ def login(req: LoginRequest):
     except HTTPException:
         raise
     except Exception as e:
+        logging.exception("Unhandled exception:")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
