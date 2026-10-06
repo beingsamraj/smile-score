@@ -38,6 +38,8 @@ export default function DashboardPage() {
   const [workersData, setWorkersData] = useState<any>(null);
   const [alertsData, setAlertsData] = useState<any>(null);
   const [activityData, setActivityData] = useState<any>(null);
+  const [riskData, setRiskData] = useState<any>(null);
+  const [recommendationsData, setRecommendationsData] = useState<any>(null);
 
   useEffect(() => {
     async function checkAuth() {
@@ -57,7 +59,7 @@ export default function DashboardPage() {
   const fetchDashboardData = useCallback(async () => {
     try {
       setError(null);
-      const [overview, trend, forecast, emotion, workers, alerts, activity] = await Promise.all([
+      const [overview, trend, forecast, emotion, workers, alerts, activity, risk, recs] = await Promise.all([
         getDashboardOverview(),
         getSmileTrend('week'),
         getSmileForecast(12), // Get 12 hour forecast
@@ -74,6 +76,8 @@ export default function DashboardPage() {
       setWorkersData(workers);
       setAlertsData(alerts);
       setActivityData(activity);
+      setRiskData(risk);
+      setRecommendationsData(recs);
       setLastUpdated(new Date());
     } catch {
       setError('Unable to load dashboard data. Please check the backend connection.');

@@ -1,5 +1,4 @@
 import csv
-import json
 import asyncio
 import os
 import sys

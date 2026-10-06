@@ -64,3 +64,12 @@ export async function getAIInsights() {
 export async function getShiftAnalysis() {
   return fetchApi('/shifts');
 }
+
+
+export async function getFactoryRisk(factoryId = 'FAC001') {
+  return fetchApi(/risk/factory/);
+}
+
+export async function getRecommendations(factoryId = 'FAC001') {
+  return fetchApi(/recommendations/factory/);
+}

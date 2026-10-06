@@ -1,11 +1,10 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional
 from datetime import datetime
 import uuid
 
 from app.repositories.d1_repository import d1_repo
-from app.services.d1_client import d1
 
 router = APIRouter(prefix="/api", tags=["D1 Integration"])
 

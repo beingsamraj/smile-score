@@ -1,6 +1,5 @@
 from fastapi import APIRouter, HTTPException, Query
 from app.services.d1_client import d1
-from pydantic import BaseModel, Field
 from typing import Optional
 
 router = APIRouter(prefix="/api/devices", tags=["Devices"])

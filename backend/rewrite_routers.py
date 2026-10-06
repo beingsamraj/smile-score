@@ -1,4 +1,3 @@
-import os
 
 # 1. WORKERS ROUTER
 workers_code = """

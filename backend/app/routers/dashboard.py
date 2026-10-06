@@ -1,6 +1,5 @@
 from fastapi import APIRouter
 from app.services.d1_client import d1
-from datetime import datetime, timedelta
 
 router = APIRouter(prefix="/api/dashboard", tags=["Dashboard"])
 
@@ -115,7 +114,16 @@ async def get_recent_activity():
 
 @router.get("/smile-forecast")
 async def get_smile_forecast(hours: int = 12):
-    return {"data": []}
+    try:
+        from app.routers.ai_features import get_factory_forecast
+        # Default to FAC001 if no factory context exists in dashboard overview
+        res = await get_factory_forecast("FAC001", hours)
+        return {"data": res["forecast"]}
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning(f"Smile forecast failed: {e}")
+        return {"data": []}
+
 
 @router.get("/departments")
 async def get_departments():

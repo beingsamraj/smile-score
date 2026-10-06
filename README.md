@@ -67,3 +67,14 @@ Once the backend is running, the OpenAPI specification is available natively:
 
 ## License
 MIT License
+
+## AI/ML Features
+1. **Anomaly detection**: (Production) Detects anomalies in real-time streaming data from factories.
+2. **Factory forecasting**: (Production) Uses Prophet to forecast future worker wellbeing based on historical data.
+3. **Production-risk prediction**: (Production) Uses XGBoost to evaluate immediate factory risk levels.
+4. **Factory risk dashboard**: (Production) Aggregates factory risk computations for a real-time high-level view.
+5. **Recommendations**: (Prototype) Rule-based logic providing operational wellness recommendations (NOT medical diagnosis).
+6. **Multi-signal anomaly detection**: (Planned) Placeholder for future advanced sensor integrations.
+7. **Emotion classification architecture**: (Baseline) Interface for raw facial/signal inputs, currently falling back to standard hardware feedbacks.
+
+**Ethics Note**: Smile Score provides operational proxies for wellbeing. It DOES NOT provide medical diagnoses. Human review is required for all AI-guided operational decisions.

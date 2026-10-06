@@ -1,5 +1,4 @@
 import pytest
-import asyncio
 from app.services.active_worker import ActiveWorkerState
 
 @pytest.mark.asyncio
