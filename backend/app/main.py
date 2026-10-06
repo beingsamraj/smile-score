@@ -15,6 +15,31 @@ from datetime import datetime, timedelta, timezone
 
 limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(title="Smile Score API")
+
+import logging
+from pythonjsonlogger import jsonlogger
+import uuid
+
+# Configure JSON Logging
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+# Clear existing handlers
+if logger.hasHandlers():
+    logger.handlers.clear()
+    
+logHandler = logging.StreamHandler()
+formatter = jsonlogger.JsonFormatter('%(asctime)s %(levelname)s %(name)s %(message)s')
+logHandler.setFormatter(formatter)
+logger.addHandler(logHandler)
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    request_id = str(uuid.uuid4())
+    logger.info("Request started", extra={"request_id": request_id, "method": request.method, "url": str(request.url)})
+    response = await call_next(request)
+    logger.info("Request completed", extra={"request_id": request_id, "status_code": response.status_code})
+    return response
+
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 

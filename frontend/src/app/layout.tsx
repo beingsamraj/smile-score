@@ -21,13 +21,23 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import Script from "next/script";
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <head>
+        <Script defer data-domain="smilescore.app" src="https://plausible.io/js/script.js" strategy="afterInteractive" />
+      </head>
+      <body className="min-h-full flex flex-col">
+        <ErrorBoundary>
+          {children}
+        </ErrorBoundary>
+      </body>
     </html>
   );
 }
