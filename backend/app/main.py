@@ -336,6 +336,10 @@ async def submit_feedback(request: FeedbackRequest):
         logging.exception("Unhandled exception:")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/api/openapi")
+def get_openapi_spec():
+    return app.openapi()
+
 @app.get("/api/health")
 def health_check():
     return {

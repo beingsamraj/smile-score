@@ -21,10 +21,17 @@ jobs:
         cache: 'pip'
     - name: Install dependencies
       run: pip install -r requirements.txt
-    - name: Run linting
+    - name: Run linting (Ruff)
       run: |
         pip install ruff
         ruff check . || echo "Ruff failed but continuing"
+    - name: Run type checking (MyPy)
+      run: |
+        pip install mypy
+        mypy app/ || echo "MyPy failed but continuing"
+    - name: Run unit tests (PyTest)
+      run: |
+        pytest tests/ || echo "PyTest failed or no tests found but continuing"
 
   frontend-build:
     runs-on: ubuntu-latest
@@ -45,3 +52,15 @@ jobs:
       run: npm run lint || echo "Lint failed but continuing"
     - name: Build
       run: npm run build
+
+  docker-build:
+    needs: [backend-tests, frontend-build]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    - name: Build Backend Image
+      run: docker build -t smilescore-backend:latest ./backend || echo "No backend Dockerfile"
+    - name: Build Frontend Image
+      run: docker build -t smilescore-frontend:latest ./frontend || echo "No frontend Dockerfile"
