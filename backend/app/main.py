@@ -16,6 +16,17 @@ from datetime import datetime, timedelta, timezone
 limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(title="Smile Score API")
 
+from fastapi.responses import JSONResponse
+
+def custom_rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    return JSONResponse(
+        status_code=429,
+        content={"error": "rate limit exceeded", "detail": str(exc)},
+    )
+app.add_exception_handler(RateLimitExceeded, custom_rate_limit_handler)
+app.state.limiter = limiter
+
+
 import logging
 from pythonjsonlogger import jsonlogger
 import uuid
@@ -366,11 +377,23 @@ def get_openapi_spec():
     return app.openapi()
 
 @app.get("/api/health")
-def health_check():
-    return {
-        "status": "ok",
-        "service": "smile-score-backend"
-    }
+async def health_check():
+    try:
+        from app.services.d1_client import d1
+        await d1.execute("SELECT 1")
+        return {
+            "status": "ok",
+            "service": "smile-score-backend",
+            "database": "connected"
+        }
+    except Exception as e:
+        logger.exception("Healthcheck DB failed")
+        return {
+            "status": "error",
+            "service": "smile-score-backend",
+            "database": "disconnected",
+            "detail": str(e)
+        }
 
 @app.get("/api/test/supabase")
 def test_supabase():
@@ -426,7 +449,7 @@ def login(req: LoginRequest, request: Request):
             
         token = jwt.encode(
             {"sub": str(user.get("user_id")), "role": user.get("user_role"), "exp": datetime.now(timezone.utc) + timedelta(hours=24)},
-            "SMILE_SCORE_SECRET_JWT_KEY_SUPER_SECURE",
+            os.getenv("JWT_SECRET", "SMILE_SCORE_SECRET_JWT_KEY_SUPER_SECURE"),
             algorithm="HS256"
         )
             
