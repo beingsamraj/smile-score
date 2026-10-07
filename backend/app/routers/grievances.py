@@ -89,6 +89,7 @@ async def detect_grievances():
 async def get_grievances(
     status: Optional[str] = Query(None),
     department: Optional[str] = Query(None),
+    date_filter: Optional[str] = Query("all"),
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100)
 ):
@@ -102,6 +103,22 @@ async def get_grievances(
     if department and department.upper() != "ALL":
         where_clauses.append("e.department = ?")
         params.append(department)
+        
+    if date_filter and date_filter.lower() != 'all':
+        now = datetime.now(timezone.utc)
+        if date_filter == 'today':
+            start_date = now.replace(hour=0, minute=0, second=0).isoformat()
+        elif date_filter == '7d':
+            start_date = (now - timedelta(days=7)).isoformat()
+        elif date_filter == '30d':
+            start_date = (now - timedelta(days=30)).isoformat()
+        else:
+            start_date = None
+            
+        if start_date:
+            where_clauses.append("g.detected_at >= ?")
+            params.append(start_date)
+
         
     where_sql = (" WHERE " + " AND ".join(where_clauses)) if where_clauses else ""
     

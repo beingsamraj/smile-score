@@ -22,6 +22,7 @@ export default function GrievancesPage() {
   // Filters
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [deptFilter, setDeptFilter] = useState('ALL');
+  const [dateFilter, setDateFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   
@@ -33,7 +34,7 @@ export default function GrievancesPage() {
     try {
       const [mRes, gRes, dRes] = await Promise.all([
         getGrievanceMetrics(),
-        getGrievances(page, 20, statusFilter, deptFilter),
+        getGrievances(page, 20, statusFilter, deptFilter, dateFilter),
         fetch(process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000' + '/api/dashboard/departments').then(r => r.json()).catch(() => [])
       ]);
       setMetrics(mRes);
@@ -50,7 +51,7 @@ export default function GrievancesPage() {
   useEffect(() => {
     fetchData(); // eslint-disable-line
     // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/set-state-in-effect
-  }, [page, statusFilter, deptFilter]);
+  }, [page, statusFilter, deptFilter, dateFilter]);
 
   const handleDetect = async () => {
     try {
@@ -135,6 +136,17 @@ export default function GrievancesPage() {
             {departments.map((d: any) /* eslint-disable-line @typescript-eslint/no-explicit-any */ => (
               <option key={d.id || d.name} value={d.name}>{d.name}</option>
             ))}
+          </select>
+
+          <select 
+            value={dateFilter}
+            onChange={e => setDateFilter(e.target.value)}
+            className="block w-full sm:w-48 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+          >
+            <option value="all">All Time</option>
+            <option value="today">Today</option>
+            <option value="7d">Last 7 Days</option>
+            <option value="30d">Last 30 Days</option>
           </select>
         </div>
 
