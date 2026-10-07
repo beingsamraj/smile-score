@@ -218,7 +218,7 @@ async def startup_event():
     # Initialize background jobs
     scheduler.add_job(run_anomaly_detection, 'interval', minutes=15, coalesce=True, max_instances=1)
     scheduler.add_job(compute_factory_risks, 'interval', minutes=60, coalesce=True, max_instances=1)
-    scheduler.add_job(run_grievance_detection, 'interval', minutes=30, coalesce=True, max_instances=1)
+    
     scheduler.start()
     logging.info("APScheduler started: running anomaly detection every 15 minutes.")
 
@@ -259,13 +259,7 @@ async def compute_factory_risks():
         logger.exception("compute_factory_risks failed")
 
 
-async def run_grievance_detection():
-    try:
-        from app.routers.grievances import detect_grievances
-        res = await detect_grievances()
-        logger.info(res["message"])
-    except Exception as e:
-        logger.exception("Grievance detection failed")
+
 
 async def run_anomaly_detection():
     try:
