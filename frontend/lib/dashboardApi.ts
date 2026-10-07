@@ -66,10 +66,25 @@ export async function getShiftAnalysis() {
 }
 
 
+
 export async function getFactoryRisk(factoryId = 'FAC001') {
-  return fetchApi(/risk/factory/);
+  try {
+    const res = await fetch(`${API_URL}/api/risk/factory/${factoryId}`, { cache: 'no-store' });
+    if (!res.ok) throw new Error('Failed to fetch data');
+    return await res.json();
+  } catch (error) {
+    console.error('API Error:', error);
+    return null;
+  }
 }
 
 export async function getRecommendations(factoryId = 'FAC001') {
-  return fetchApi(/recommendations/factory/);
+  try {
+    const res = await fetch(`${API_URL}/api/recommendations/factory/${factoryId}`, { cache: 'no-store' });
+    if (!res.ok) throw new Error('Failed to fetch data');
+    return await res.json();
+  } catch (error) {
+    console.error('API Error:', error);
+    return null;
+  }
 }
