@@ -62,7 +62,8 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type", "Accept"],
 )
 
-from app.routers import dashboard, factories, users, devices, workers, departments, reports, ai_features, grievances, ml
+from app.routers import dashboard, factories, users, devices, workers, departments, reports, ai_features, grievances, ml, wellness
+
 app.include_router(dashboard.router)
 app.include_router(factories.router)
 app.include_router(users.router)
@@ -72,6 +73,7 @@ app.include_router(departments.dept_router)
 app.include_router(reports.router)
 app.include_router(ai_features.router)
 app.include_router(grievances.router)
+app.include_router(wellness.router)
 from app.routers.d1_api import router as d1_router
 app.include_router(d1_router)
 
@@ -211,6 +213,43 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import logging
 from app.ai_models.anomaly_detector import anomaly_detector
 
+
+import smtplib
+from email.message import EmailMessage
+import io
+import csv
+
+async def send_wellness_report():
+    try:
+        from app.routers.wellness import export_report
+        # Extract CSV string from StreamingResponse
+        res = await export_report()
+        body = b""
+        async for chunk in res.body_iterator:
+            body += chunk.encode() if isinstance(chunk, str) else chunk
+            
+        msg = EmailMessage()
+        msg['Subject'] = 'Daily Wellness & Nurse Referral Report'
+        msg['From'] = 'samrajgodwin7@gmail.com'
+        msg['To'] = 'samrajgodwin7@gmail.com'
+        msg.set_content('Hello Nurse,\n\nPlease find attached the daily wellness report for employees with anomalous vitals requiring medical attention.\n\nRegards,\nSmile Score System')
+        
+        msg.add_attachment(body, maintype='text', subtype='csv', filename='wellness_report.csv')
+        
+        # Configure this in .env later
+        smtp_password = os.getenv("SMTP_PASSWORD", "")
+        if not smtp_password:
+            logger.warning("SMTP_PASSWORD not set. Skipping email send.")
+            return
+            
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+            server.login('samrajgodwin7@gmail.com', smtp_password)
+            server.send_message(msg)
+            
+        logger.info("Wellness report emailed successfully to samrajgodwin7@gmail.com")
+    except Exception as e:
+        logger.exception("Failed to send wellness report email")
+
 scheduler = AsyncIOScheduler()
 
 @app.on_event("startup")
@@ -219,6 +258,7 @@ async def startup_event():
     scheduler.add_job(run_anomaly_detection, 'interval', minutes=15, coalesce=True, max_instances=1)
     scheduler.add_job(compute_factory_risks, 'interval', minutes=60, coalesce=True, max_instances=1)
     
+    scheduler.add_job(send_wellness_report, 'cron', hour=13, minute=30, timezone='Asia/Kolkata')
     scheduler.start()
     logging.info("APScheduler started: running anomaly detection every 15 minutes.")
 

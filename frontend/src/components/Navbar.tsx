@@ -68,6 +68,7 @@ export default function Navbar() {
     { name: 'Reports', path: '/reports' },
     { name: 'Devices', path: '/devices' },
     { name: 'Grievance', path: '/grievances' },
+    { name: 'Wellness', path: '/wellness' },
   ];
 
   const displayName = user?.name || user?.username || user?.email || 'Authenticated User';
