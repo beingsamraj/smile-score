@@ -23,7 +23,7 @@ export default function GrievancesPage() {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [deptFilter, setDeptFilter] = useState('ALL');
   const [dateFilter, setDateFilter] = useState('all');
-  const [riskFilter, setRiskFilter] = useState('ALL');
+  const [sortBy, setSortBy] = useState('detected_desc');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   
@@ -35,7 +35,7 @@ export default function GrievancesPage() {
     try {
       const [mRes, gRes, dRes] = await Promise.all([
         getGrievanceMetrics(),
-        getGrievances(page, 20, statusFilter, deptFilter, dateFilter, riskFilter),
+        getGrievances(page, 20, statusFilter, deptFilter, dateFilter, sortBy),
         fetch((process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000') + '/api/dashboard/departments').then(r => r.json()).catch(() => [])
       ]);
       setMetrics(mRes);
@@ -52,7 +52,7 @@ export default function GrievancesPage() {
   useEffect(() => {
     fetchData(); // eslint-disable-line
     // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/set-state-in-effect
-  }, [page, statusFilter, deptFilter, dateFilter, riskFilter]);
+  }, [page, statusFilter, deptFilter, dateFilter, sortBy]);
 
   const handleDetect = async () => {
     try {
@@ -157,15 +157,15 @@ export default function GrievancesPage() {
           </div>
           
           <select 
-            value={riskFilter}
-            onChange={e => setRiskFilter(e.target.value)}
+            value={sortBy}
+            onChange={e => setSortBy(e.target.value)}
             className="block w-full sm:w-48 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
           >
-            <option value="ALL">All Risk Levels</option>
-            <option value="LOW">Low Risk</option>
-            <option value="MODERATE">Moderate Risk</option>
-            <option value="HIGH">High Risk</option>
-            <option value="CRITICAL">Critical Risk</option>
+            <option value="detected_desc">Sort: Newest First</option>
+            <option value="detected_asc">Sort: Oldest First</option>
+            <option value="risk_desc">Sort: Risk (High to Low)</option>
+            <option value="risk_asc">Sort: Risk (Low to High)</option>
+            <option value="sad_count_desc">Sort: SAD Count (High to Low)</option>
           </select>
         </div>
 

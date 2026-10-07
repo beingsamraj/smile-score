@@ -38,7 +38,7 @@ async def get_grievances(
     status: Optional[str] = Query(None),
     department: Optional[str] = Query(None),
     date_filter: Optional[str] = Query("all"),
-    risk_level: Optional[str] = Query("ALL"),
+    sort_by: Optional[str] = Query("detected_desc"),
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100)
 ):
@@ -54,11 +54,19 @@ async def get_grievances(
         where_clauses.append("f.timestamp LIKE ?")
         params.append(f"{date_filter}%")
         
-    if risk_level and risk_level.upper() != 'ALL':
-        where_clauses.append("(SELECT risk_level FROM ml_predictions m WHERE m.employee_id = f.employee_id ORDER BY created_at DESC LIMIT 1) = ?")
-        params.append(risk_level.upper())
+
         
     where_sql = (" WHERE " + " AND ".join(where_clauses)) if where_clauses else ""
+    
+    order_sql = "ORDER BY MAX(f.timestamp) DESC"
+    if sort_by == 'detected_asc':
+        order_sql = "ORDER BY MAX(f.timestamp) ASC"
+    elif sort_by == 'risk_desc':
+        order_sql = "ORDER BY risk_score DESC"
+    elif sort_by == 'risk_asc':
+        order_sql = "ORDER BY risk_score ASC"
+    elif sort_by == 'sad_count_desc':
+        order_sql = "ORDER BY total_sad_count DESC"
     
     count_sql = f"""
         SELECT COUNT(DISTINCT f.employee_id) as c 
@@ -89,7 +97,7 @@ async def get_grievances(
         JOIN employees e ON f.employee_id = e.employee_id
         {where_sql}
         GROUP BY f.employee_id
-        ORDER BY MAX(f.timestamp) DESC
+        {order_sql}
         LIMIT ? OFFSET ?
     """
     

@@ -51,7 +51,7 @@ export async function getGrievances(
   status?: string,
   department?: string,
   dateFilter?: string,
-  riskLevel?: string
+  sortBy?: string
 ): Promise<{ data: GrievanceRecord[]; total: number; page: number; limit: number }> {
   const params = new URLSearchParams({
     page: page.toString(),
@@ -60,7 +60,7 @@ export async function getGrievances(
   if (status && status !== 'ALL') params.append('status', status);
   if (department && department !== 'ALL') params.append('department', department);
   if (dateFilter && dateFilter !== 'all') params.append('date_filter', dateFilter);
-  if (riskLevel && riskLevel !== 'ALL') params.append('risk_level', riskLevel);
+  if (sortBy) params.append('sort_by', sortBy);
   
   const res = await fetch(`${API_URL}/api/grievances?${params.toString()}`, { cache: 'no-store' });
   return handleResponse(res);
