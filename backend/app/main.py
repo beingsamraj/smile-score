@@ -7,7 +7,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-from app.database import supabase
 import asyncio
 import json
 import logging
@@ -144,19 +143,19 @@ async def broadcast_emotion_update(emotion_data: dict):
 
 # ─── Worker Wellness Timeline ────────────────────────────────────────────────────
 @app.get("/api/workers/{worker_id}/timeline")
-def get_worker_timeline(worker_id: str, days: int = 7):
+async def get_worker_timeline(worker_id: str, days: int = 7):
     try:
         # Verify worker exists
-        w_res = supabase.table("workers").select("worker_id, name, employee_id, designation, department_id, factory_id, status").eq("worker_id", worker_id).execute()
-        if not w_res.data:
+        w_res = await d1.execute("SELECT worker_id, name, employee_id, designation, department_id, factory_id, status FROM workers WHERE worker_id = ?", [worker_id])
+        if not w_res:
             from fastapi import HTTPException
             raise HTTPException(status_code=404, detail="Worker not found")
         worker = w_res.data[0]
 
         # Get emotion events for last N days
         since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
-        e_res = supabase.table("emotions").select("emotion_id, emotion, smile_score, created_at").eq("worker_id", worker_id).gte("created_at", since).order("created_at").execute()
-        events = e_res.data or []
+        events = await d1.execute("SELECT emotion_id, emotion, smile_score, created_at FROM emotions WHERE worker_id = ? AND created_at >= ? ORDER BY created_at", [worker_id, since])
+        events = events or []
 
         # Group by day
         daily_buckets: dict = {}

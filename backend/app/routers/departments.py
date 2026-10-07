@@ -1,16 +1,19 @@
 from fastapi import APIRouter
 from typing import Optional
-from app.database import supabase
+from app.services.d1_client import d1
 
 dept_router = APIRouter(prefix="/api/departments", tags=["Departments"])
 
 @dept_router.get("")
-def list_departments(factory_id: Optional[str] = None):
+async def list_departments(factory_id: Optional[str] = None):
     try:
-        query = supabase.table("departments").select("*")
+        sql = "SELECT * FROM departments"
+        params = []
         if factory_id:
-            query = query.eq("factory_id", factory_id)
-        res = query.execute()
-        return {"data": res.data or [], "total": len(res.data or [])}
+            sql += " WHERE factory_id = ?"
+            params.append(factory_id)
+            
+        res = await d1.execute(sql, params)
+        return {"data": res or [], "total": len(res or [])}
     except Exception as e:
         return {"data": [], "total": 0, "error": str(e)}
