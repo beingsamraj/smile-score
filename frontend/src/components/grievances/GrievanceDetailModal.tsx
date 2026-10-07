@@ -67,7 +67,7 @@ export default function GrievanceDetailModal({ grievanceId, onClose, onUpdated }
 
         <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
-        <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl w-full">
+        <div className="relative z-10 inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl w-full">
           {loading || !data ? (
             <div className="p-8 text-center text-gray-500">Loading details...</div>
           ) : (
