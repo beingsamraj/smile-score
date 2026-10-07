@@ -9,7 +9,7 @@ import {
   GrievanceMetrics,
   GrievanceRecord
 } from '@/lib/grievanceApi';
-import { getDepartments } from '@/lib/departmentApi';
+
 import { RefreshCw, Filter, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 import GrievanceDetailModal from '@/components/grievances/GrievanceDetailModal';
 
@@ -34,7 +34,7 @@ export default function GrievancesPage() {
       const [mRes, gRes, dRes] = await Promise.all([
         getGrievanceMetrics(),
         getGrievances(page, 20, statusFilter, deptFilter),
-        getDepartments()
+        fetch(process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000' + '/api/dashboard/departments').then(r => r.json()).catch(() => [])
       ]);
       setMetrics(mRes);
       setRecords(gRes.data);

@@ -1,4 +1,13 @@
-import { API_URL, handleResponse } from './api';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+
+async function handleResponse(res: Response) {
+  if (!res.ok) {
+    throw new Error("API Error: " + res.statusText);
+  }
+  return res.json();
+}
+
 
 export interface GrievanceMetrics {
   TOTAL: number;
@@ -23,7 +32,6 @@ export interface GrievanceRecord {
   risk_score: number;
 }
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export interface GrievanceDetail {
   grievance: any;
   notes: any[];
