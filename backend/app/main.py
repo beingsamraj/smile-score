@@ -62,7 +62,7 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type", "Accept"],
 )
 
-from app.routers import dashboard, factories, users, devices, workers, departments, reports, ai_features, ml
+from app.routers import dashboard, factories, users, devices, workers, departments, reports, ai_features, grievances, ml
 app.include_router(dashboard.router)
 app.include_router(factories.router)
 app.include_router(users.router)
@@ -71,6 +71,7 @@ app.include_router(workers.router)
 app.include_router(departments.dept_router)
 app.include_router(reports.router)
 app.include_router(ai_features.router)
+app.include_router(grievances.router)
 from app.routers.d1_api import router as d1_router
 app.include_router(d1_router)
 
@@ -217,6 +218,7 @@ async def startup_event():
     # Initialize background jobs
     scheduler.add_job(run_anomaly_detection, 'interval', minutes=15, coalesce=True, max_instances=1)
     scheduler.add_job(compute_factory_risks, 'interval', minutes=60, coalesce=True, max_instances=1)
+    scheduler.add_job(run_grievance_detection, 'interval', minutes=30, coalesce=True, max_instances=1)
     scheduler.start()
     logging.info("APScheduler started: running anomaly detection every 15 minutes.")
 
@@ -255,6 +257,15 @@ async def compute_factory_risks():
                 })
     except Exception as e:
         logger.exception("compute_factory_risks failed")
+
+
+async def run_grievance_detection():
+    try:
+        from app.routers.grievances import detect_grievances
+        res = await detect_grievances()
+        logger.info(res["message"])
+    except Exception as e:
+        logger.exception("Grievance detection failed")
 
 async def run_anomaly_detection():
     try:
